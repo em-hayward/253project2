@@ -5,3 +5,13 @@ date: "4/23/2020"
 output: html_document
 ---
 
+```{r}
+library(tidyverse)
+library(janitor)
+
+```
+
+```{r}
+GunViolenceData <- read_csv("GunViolenceData.csv")
+head(GunViolenceData)
+```
