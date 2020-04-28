@@ -12,6 +12,5 @@ library(janitor)
 ```
 
 ```{r}
-GunViolenceData <- read_csv("GunViolenceData.csv")
-head(GunViolenceData)
+gvd <- read_csv("GunViolenceData.csv")
 ```
