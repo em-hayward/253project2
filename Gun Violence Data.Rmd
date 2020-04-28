@@ -116,7 +116,7 @@ ggplot(data = datefixed,
 ```{r}
 # gun violence grouped by state order descending
 
-gvd %>%
+dataByState <- datefixed %>%
   group_by(state) %>%
   summarize(n=n()) %>%
   arrange(desc(n))
@@ -186,6 +186,63 @@ plot4 <- gv_train %>%
 grid.arrange(plot1, plot2, plot3, plot4,ncol = 2)
 ```
 
+
+```{r}
+library(usmap)
+library(ggplot2)
+
+plot_usmap(data = dataByState, values = "n", color = "red") +
+  scale_fill_continuous(low = "white", high = "yellow", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
+```
+```{r}
+deaths <- gvd %>% 
+  filter(n_killed > 0)
+
+injured <- gvd %>% 
+  filter(n_killed < 1) %>%
+  filter(n_injured > 0)
+
+nobodyHurt <- gvd %>% 
+  filter(n_killed < 1) %>% 
+  filter(n_injured < 1)
+  
+nrow(deaths)
+nrow(injured)
+nrow(nobodyHurt)
+```
+```{r}
+dataByState <- deaths %>%
+  group_by(state) %>%
+  summarize(n=n()) %>%
+  arrange(desc(n))
+
+
+library(usmap)
+library(ggplot2)
+
+plot_usmap(data = dataByState, values = "n", color = "red") +
+  scale_fill_continuous(low = "white", high = "yellow", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
+
+dataByState <- injured %>%
+  group_by(state) %>%
+  summarize(n=n()) %>%
+  arrange(desc(n))
+
+
+
+plot_usmap(data = dataByState, values = "n", color = "red") +
+  scale_fill_continuous(low = "white", high = "yellow", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
+
+dataByState <- nobodyHurt %>%
+  group_by(state) %>%
+  summarize(n=n()) %>%
+  arrange(desc(n))
+
+
+
+plot_usmap(data = dataByState, values = "n", color = "red") +
+  scale_fill_continuous(low = "white", high = "yellow", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
+```
 
 
 
