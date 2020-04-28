@@ -14,3 +14,89 @@ library(janitor)
 ```{r}
 gvd <- read_csv("GunViolenceData.csv")
 ```
+```{r}
+levels(gvd$state)
+```
+```{r}
+# gives the data type of each column, helpful for debugging weird errors with types. Many of the types are factors
+# but many functions cant operate on factors.
+map(gvd, class)
+```
+
+
+
+```{r}
+#create a new date column on clean data that is of the Date datatype
+cleandata <- gvd
+cleandata['new_date']<-as.Date(as.character(gvd$date), format='%m/%d/%Y')
+class(cleandata$new_date)
+```
+
+```{r}
+# get date breaks from dates to sort by week, month
+cleandata$day <- as.Date(cut(cleandata$new_date,
+  breaks = "day"))
+cleandata$month <- as.Date(cut(cleandata$new_date,
+  breaks = "month"))
+cleandata$week <- as.Date(cut(cleandata$new_date,
+  breaks = "week",
+  start.on.monday = TRUE)) # usually starts on sunday, 2018-01-01 was a monday. makes it easier ;)
+```
+
+```{r}
+# gun violence grouped by WEEK arranged in chronological order
+# note to reverse order just edit arrange(desc(week))
+
+totalsByWeek <- cleandata %>%
+  group_by(week) %>%
+  summarize(total=n()) %>%
+  arrange(week)
+```
+
+```{r}
+totalsByDay <- cleandata %>%
+  group_by(day) %>%
+  summarize(total=n()) %>%
+  arrange(day)
+```
+
+
+```{r}
+library(ggplot2)
+library(scales)
+# graph by day..... new years was CrAzY that year..:
+ggplot(data = totalsByDay,
+  aes(day, total)) +
+  stat_summary(fun.y = sum,
+    geom = "bar") + # or "line"
+  scale_x_date(
+    labels = date_format("%m-%d"),
+    breaks = "1 week") # custom x-axis labels
+```
+
+```{r}
+# gun violence grouped by state order descending
+
+gvd %>%
+  group_by(state) %>%
+  summarize(n=n()) %>%
+  arrange(desc(n))
+```
+
+```{r}
+cleandata <- gvd %>%
+  filter(!is.na(participant_gender))
+```
+
+
+
+```{r}
+library(tidyverse)
+#cleandata$participant_gender <- str_replace(cleandata$participant_gender, "||", ",")
+#cleandata$participant_gender <- str_replace(cleandata$participant_gender, "::", "")
+#cleandata$participant_gender <- str_replace(cleandata$participant_gender, "[012]", "")
+
+```
+
+
+
