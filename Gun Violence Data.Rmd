@@ -6,10 +6,43 @@ output: html_document
 ---
 
 
-```{r}
+```{r,echo=FALSE}
 library(tidyverse)
 library(janitor)
+library(tidyverse) #for plotting and summarizing
+library(GGally) #for nice scatterplot matrix 
+library(ggridges) #for joy/ridge plots
+library(corrplot) #for basic correlation matrix plot
+library(naniar) #for exploring missing values
+library(pdp) #for partial dependence plots, MARS models
 
+#making things look nice
+library(lubridate) #for nice dates
+library(knitr) #for nice tables
+library(scales) #for nice labels on graphs
+library(gridExtra) #for arranging plots
+library(broom) #for nice model output
+
+#data
+library(ISLR) #for data
+library(moderndive) #for data
+
+#modeling
+library(rsample) #for splitting data
+library(recipes) #for keeping track of any transformations we do
+library(caret) #for modeling
+library(leaps) #for variable selection
+library(glmnet) #for LASSO
+library(earth) #for MARS models
+library(vip) #NEW for importance plots
+
+
+library(rpart)
+library(rpart.plot)
+library(expss)
+library(data.table)
+library(formattable)
+theme_set(theme_minimal())
 ```
 
 ```{r}
@@ -90,7 +123,7 @@ gvd %>%
 ```
 
 ```{r}
-#cleandata <- 
+cleandata <- 
   datefixed%>%
   mutate(female_present = str_detect(participant_gender, "Female")) %>% 
   mutate(teen_present = str_detect(participant_age_group, "Teen 12-17")) %>% 
@@ -98,16 +131,21 @@ gvd %>%
   mutate_if(is.character, replace_na, replace = "missing") %>%
   mutate_if(is.logical, replace_na, replace ="missing") %>% 
   select(-c(incident_id, incident_url_fields_missing, address, incident_url, source_url, incident_characteristics, location_description, notes, participant_name, participant_relationship, sources))
-```
-
-```{r}
 
 ```
 
+```{r}
+set.seed(253) 
+gv_split <- initial_split(cleandata, 
+                             prop = .7)
+gv_train <- training(gv_split)
+gv_test <- testing(gv_split)
+```
+
 
 
 ```{r}
-colnames(cleandata)
+colnames(gv_train)
 ```
 
 
@@ -122,33 +160,32 @@ library(tidyverse)
 ```
 
 ```{r}
-cleandata %>%
+gv_train %>%
   group_by(city_or_county) %>%
   summarize(n=n()) %>%
   arrange(desc(n))
 ```
 
-```{r}
-cleandata %>%
+```{r, fig.width = 14, fig.height = 10}
+plot1 <- gv_train %>%
   ggplot(aes(x=date, y=n_killed)) +
   geom_point()
-```
 
-```{r}
-cleandata %>%
+plot2 <- gv_train %>%
   ggplot(aes(x=date, y=n_injured)) +
   geom_point()
-```
 
-```{r}
-cleandata %>%
+plot3 <- gv_train %>%
   ggplot(aes(x = congressional_district, y = n_killed)) +
   geom_point()
-```
 
-```{r}
-cleandata %>%
+plot4 <- gv_train %>%
   ggplot(aes(x = (latitude/longitude), y = n_killed)) +
   geom_point()
+
+grid.arrange(plot1, plot2, plot3, plot4,ncol = 2)
 ```
+
+
+
 
