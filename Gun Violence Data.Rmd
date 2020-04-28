@@ -65,7 +65,7 @@ totalsByDay <- cleandata %>%
 library(ggplot2)
 library(scales)
 # graph by day..... new years was CrAzY that year..:
-ggplot(data = totalsByDay,
+ggplot(data = cleandata,
   aes(day, total)) +
   stat_summary(fun.y = sum,
     geom = "bar") + # or "line"
@@ -98,5 +98,34 @@ library(tidyverse)
 
 ```
 
+```{r}
+cleandata %>%
+  group_by(city_or_county) %>%
+  summarize(n=n()) %>%
+  arrange(desc(n))
+```
 
+```{r}
+cleandata %>%
+  ggplot(aes(x=date, y=n_killed)) +
+  geom_point()
+```
+
+```{r}
+cleandata %>%
+  ggplot(aes(x=date, y=n_injured)) +
+  geom_point()
+```
+
+```{r}
+cleandata %>%
+  ggplot(aes(x = congressional_district, y = n_killed)) +
+  geom_point()
+```
+
+```{r}
+cleandata %>%
+  ggplot(aes(x = (latitude/longitude), y = n_killed)) +
+  geom_point()
+```
 
