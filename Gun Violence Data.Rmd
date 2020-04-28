@@ -5,6 +5,7 @@ date: "4/23/2020"
 output: html_document
 ---
 
+
 ```{r}
 library(tidyverse)
 library(janitor)
@@ -32,18 +33,18 @@ map(gvd, class)
 
 ```{r}
 #create a new date column on clean data that is of the Date datatype
-cleandata <- gvd
-cleandata['new_date']<-as.Date(as.character(gvd$date), format='%m/%d/%Y')
-class(cleandata$new_date)
+datefixed <- gvd
+datefixed['new_date']<-as.Date(as.character(gvd$date), format='%m/%d/%Y')
+class(datefixed$new_date)
 ```
 
 ```{r}
 # get date breaks from dates to sort by week, month
-cleandata$day <- as.Date(cut(cleandata$new_date,
+datefixed$day <- as.Date(cut(datefixed$new_date,
   breaks = "day"))
-cleandata$month <- as.Date(cut(cleandata$new_date,
+datefixed$month <- as.Date(cut(datefixed$new_date,
   breaks = "month"))
-cleandata$week <- as.Date(cut(cleandata$new_date,
+datefixed$week <- as.Date(cut(datefixed$new_date,
   breaks = "week",
   start.on.monday = TRUE)) # usually starts on sunday, 2018-01-01 was a monday. makes it easier ;)
 ```
@@ -52,14 +53,14 @@ cleandata$week <- as.Date(cut(cleandata$new_date,
 # gun violence grouped by WEEK arranged in chronological order
 # note to reverse order just edit arrange(desc(week))
 
-totalsByWeek <- cleandata %>%
+totalsByWeek <- datefixed %>%
   group_by(week) %>%
   summarize(total=n()) %>%
   arrange(week)
 ```
 
 ```{r}
-totalsByDay <- cleandata %>%
+totalsByDay <- datefixed %>%
   group_by(day) %>%
   summarize(total=n()) %>%
   arrange(day)
@@ -70,7 +71,7 @@ totalsByDay <- cleandata %>%
 library(ggplot2)
 library(scales)
 # graph by day..... new years was CrAzY that year..:
-ggplot(data = cleandata,
+ggplot(data = datefixed,
   aes(day, total)) +
   stat_summary(fun.y = sum,
     geom = "bar") + # or "line"
@@ -89,13 +90,26 @@ gvd %>%
 ```
 
 ```{r}
-cleandata <- gvd %>%
-  filter(!is.na(participant_gender))
+#cleandata <- 
+  datefixed%>%
+  mutate(female_present = str_detect(participant_gender, "Female")) %>% 
+  mutate(teen_present = str_detect(participant_age_group, "Teen 12-17")) %>% 
+  mutate(child_present = str_detect(participant_age_group, "Child 0-11")) %>% 
+  mutate_if(is.character, replace_na, replace = "missing") %>%
+  mutate_if(is.logical, replace_na, replace ="missing") %>% 
+  select(-c(incident_id, incident_url_fields_missing, address, incident_url, source_url, incident_characteristics, location_description, notes, participant_name, participant_relationship, sources))
 ```
 
 ```{r}
-cleandata = subset(gvd, select = -c(incident_id, incident_url_fields_missing, address, incident_url, source_url, incident_characteristics, location_description, notes, participant_name, participant_relationship, sources) )
+
 ```
+
+
+
+```{r}
+colnames(cleandata)
+```
+
 
 
 
