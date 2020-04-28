@@ -18,6 +18,11 @@ gvd <- read_csv("GunViolenceData.csv")
 levels(gvd$state)
 ```
 ```{r}
+colnames(gvd)
+```
+
+
+```{r}
 # gives the data type of each column, helpful for debugging weird errors with types. Many of the types are factors
 # but many functions cant operate on factors.
 map(gvd, class)
@@ -88,13 +93,17 @@ cleandata <- gvd %>%
   filter(!is.na(participant_gender))
 ```
 
+```{r}
+cleandata = subset(gvd, select = -c(incident_id, incident_url_fields_missing, address, incident_url, source_url, incident_characteristics, location_description, notes, participant_name, participant_relationship, sources) )
+```
+
 
 
 ```{r}
 library(tidyverse)
 #cleandata$participant_gender <- str_replace(cleandata$participant_gender, "||", ",")
 #cleandata$participant_gender <- str_replace(cleandata$participant_gender, "::", "")
-#cleandata$participant_gender <- str_replace(cleandata$participant_gender, "[012]", "")
+#cleandata$participant_gender <- str_replace(cleandata$participant_gender, "[0123]", "")
 
 ```
 
