@@ -244,5 +244,94 @@ plot_usmap(data = dataByState, values = "n", color = "red") +
   scale_fill_continuous(low = "white", high = "yellow", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
 ```
 
+```{r, echo = FALSE}
+#I used backward selection to find the numeric variables give the smallest cross-validated RMSE in the model.
+gv_train_num <- gv_train %>% 
+  select_if(is.numeric)
 
 
+set.seed(253)
+splits <- trainControl(method = "cv", number = 5)
+
+gv_cv_vars <- train(
+  n_killed ~ .,
+  data = gv_train_num,
+  method = "leapBackward", #NEW method!
+  tuneGrid = data.frame(nvmax = 1:8),
+  trControl = splits,
+  na.action = na.omit
+)
+```
+
+```{r, echo = FALSE}
+summary(gv_cv_vars)
+
+#Best numeric variables include:
+#n_injured
+#latitude
+#n_guns_involved
+#longitude
+```
+
+```{r, echo = FALSE}
+#This model uses the four numeric variables from the previous model
+set.seed(253) 
+gv_ols <- train(
+  n_killed ~ n_injured + latitude + n_guns_involved + longitude,
+  data = gv_train, 
+  method = "lm",
+  trControl = splits, 
+  na.action = na.omit
+)
+
+gv_ols$results
+```
+
+```{r, echo = FALSE}
+#This model uses the variables that equate with the smallest RMSE in an OLS model
+set.seed(253) 
+gv_ols2 <- train( 
+  n_killed ~ n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + day,
+  data = gv_train, 
+  method = "lm",
+  trControl = splits, 
+  na.action = na.omit
+)
+
+gv_ols2$results
+```
+
+```{r}
+lambda_grid <- 10^seq(-4, -1 , length = 50)
+
+set.seed(253)
+gv_lasso <- train(
+  n_killed ~ n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + day,
+  data = gv_train, 
+  method = "glmnet",
+  tuneGrid = data.frame(alpha = 1, lambda = lambda_grid),
+  trControl = splits,
+  na.action = na.omit,
+  metric = "RMSE", 
+  maximize = FALSE
+)
+
+gv_lasso$bestTune$lambda
+gv_lasso$results
+
+#RMSE of 0.4696148	
+```
+
+```{r, echo = FALSE}
+#Says there are missing values in n_killed
+set.seed(253)
+
+gv_mars <- train(
+  n_killed ~ n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + day,
+  data = gv_train, 
+  method = "earth",
+  trControl = trainControl(method = "cv",
+                           number = 5),
+  tuneGrid = data.frame(degree = 1, nprune = 2:8)
+)
+```
