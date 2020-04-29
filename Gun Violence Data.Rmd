@@ -335,3 +335,43 @@ gv_mars <- train(
   tuneGrid = data.frame(degree = 1, nprune = 2:8)
 )
 ```
+
+```{r}
+set.seed(253)
+
+gv_class_tree <- train(
+  n_killed ~ .,
+  data = gv_train,
+  method = "rpart",
+  tuneGrid = data.frame(cp = .5),
+  trControl = trainControl(method = "cv", number = 5),
+  metric = "RMSE",
+  na.action = na.omit
+)
+```
+
+```{r}
+gv_class_tree$results
+gv_class_tree$finalModel
+```
+
+
+```{r}
+set.seed(253)
+gv_tree_oob <- train(
+  n_killed ~ .,
+  data = gv_train, 
+  method = "rf",
+  trControl = trainControl(method = "oob"),
+  tuneGrid = data.frame(mtry = c(2,6,12,18)),
+  ntree = 200, #number of trees used, default is 500
+  importance = TRUE, #for importance plots later
+  nodesize = 5, #this is the default terminal node size for regression trees. Could set larger for smaller trees.
+  na.action = na.omit
+)
+```
+
+```{r}
+vip(gv_tree_oob$finalModel, num_features = 16, bar = FALSE)
+```
+
