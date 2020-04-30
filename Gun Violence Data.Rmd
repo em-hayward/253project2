@@ -100,18 +100,7 @@ totalsByDay <- datefixed %>%
 ```
 
 
-```{r}
-library(ggplot2)
-library(scales)
-# graph by day..... new years was CrAzY that year..:
-ggplot(data = datefixed,
-  aes(day, total)) +
-  stat_summary(fun.y = sum,
-    geom = "bar") + # or "line"
-  scale_x_date(
-    labels = date_format("%m-%d"),
-    breaks = "1 week") # custom x-axis labels
-```
+
 
 ```{r}
 # gun violence grouped by state order descending
@@ -191,8 +180,8 @@ grid.arrange(plot1, plot2, plot3, plot4,ncol = 2)
 library(usmap)
 library(ggplot2)
 
-plot_usmap(data = dataByState, values = "n", color = "red") +
-  scale_fill_continuous(low = "white", high = "yellow", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
+plot_usmap(data = dataByState, values = "n", color = "black") +
+  scale_fill_continuous(low = "white", high = "orchid3", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
 ```
 ```{r}
 deaths <- gvd %>% 
@@ -220,8 +209,8 @@ dataByState <- deaths %>%
 library(usmap)
 library(ggplot2)
 
-plot_usmap(data = dataByState, values = "n", color = "red") +
-  scale_fill_continuous(low = "white", high = "yellow", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
+plot_usmap(data = dataByState, values = "n", color = "black") +
+  scale_fill_continuous(low = "white", high = "orchid3", name = "Number Of Deaths (2018)", label = scales::comma) + theme(legend.position = "right")
 
 dataByState <- injured %>%
   group_by(state) %>%
@@ -230,8 +219,8 @@ dataByState <- injured %>%
 
 
 
-plot_usmap(data = dataByState, values = "n", color = "red") +
-  scale_fill_continuous(low = "white", high = "yellow", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
+plot_usmap(data = dataByState, values = "n", color = "black") +
+  scale_fill_continuous(low = "white", high = "orchid3", name = "Number Injured (2018)", label = scales::comma) + theme(legend.position = "right")
 
 dataByState <- nobodyHurt %>%
   group_by(state) %>%
@@ -240,9 +229,18 @@ dataByState <- nobodyHurt %>%
 
 
 
-plot_usmap(data = dataByState, values = "n", color = "red") +
-  scale_fill_continuous(low = "white", high = "yellow", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
+plot_usmap(data = dataByState, values = "n", color = "black") +
+  scale_fill_continuous(low = "white", high = "orchid3", name = "Nobody Hurt (2018)", label = scales::comma) + theme(legend.position = "right")
 ```
+```{r}
+dataByCounty <- datefixed %>%
+  group_by(city_or_county) %>%
+  summarize(n=n()) %>%
+  arrange(desc(n))
+```
+
+
+
 
 ```{r, echo = FALSE}
 #I used backward selection to find the numeric variables give the smallest cross-validated RMSE in the model.
@@ -332,7 +330,8 @@ gv_mars <- train(
   method = "earth",
   trControl = trainControl(method = "cv",
                            number = 5),
-  tuneGrid = data.frame(degree = 1, nprune = 2:8)
+  tuneGrid = data.frame(degree = 1, nprune = 2:8),
+  na.action = na.omit
 )
 ```
 
