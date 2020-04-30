@@ -71,16 +71,7 @@ datefixed['new_date']<-as.Date(as.character(gvd$date), format='%m/%d/%Y')
 class(datefixed$new_date)
 ```
 
-```{r}
-# get date breaks from dates to sort by week, month
-datefixed$day <- as.Date(cut(datefixed$new_date,
-  breaks = "day"))
-datefixed$month <- as.Date(cut(datefixed$new_date,
-  breaks = "month"))
-datefixed$week <- as.Date(cut(datefixed$new_date,
-  breaks = "week",
-  start.on.monday = TRUE)) # usually starts on sunday, 2018-01-01 was a monday. makes it easier ;)
-```
+
 
 ```{r}
 # gun violence grouped by WEEK arranged in chronological order
@@ -126,7 +117,7 @@ cleandata <-
 ```{r}
 set.seed(253) 
 gv_split <- initial_split(cleandata, 
-                             prop = .7)
+                             prop = .5)
 gv_train <- training(gv_split)
 gv_test <- testing(gv_split)
 ```
