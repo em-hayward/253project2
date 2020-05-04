@@ -164,7 +164,7 @@ plot4 <- gv_train %>%
   ggplot(aes(x = (latitude/longitude), y = n_killed)) +
   geom_point()
 
-grid.arrange(plot1, plot2, plot4,ncol = 2)
+grid.arrange(plot1, plot2, plot4, ncol = 2)
 ```
 
 
@@ -246,7 +246,9 @@ gv_cv_vars <- train(
 ```
 
 ```{r, echo = FALSE}
+#RMSE of 0.5156813	
 summary(gv_cv_vars)
+gv_cv_vars$results
 
 #Best numeric variables include:
 #n_injured
@@ -267,6 +269,7 @@ gv_ols <- train(
 )
 
 gv_ols$results
+#RMSE of 0.5039284	
 ```
 
 ```{r, echo = FALSE}
@@ -281,6 +284,7 @@ gv_ols2 <- train(
 )
 
 gv_ols2$results
+#RMSE of 0.4736671	
 ```
 
 ```{r}
@@ -314,16 +318,21 @@ gv_mars <- train(
   method = "earth",
   trControl = trainControl(method = "cv",
                            number = 5),
-  tuneGrid = data.frame(degree = 1, nprune = 2:8),
+  tuneGrid = data.frame(degree = 1, nprune = 4:12),
   na.action = na.omit
 )
+```
+```{r}
+gv_mars$bestTune
+gv_mars$results
+#RMSE of 0.4640177
 ```
 
 ```{r, echo = FALSE}
 set.seed(253)
 
 gv_class_tree <- train(
-  n_killed ~ .,
+  n_killed ~   n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + new_date,
   data = gv_train,
   method = "rpart",
   tuneGrid = data.frame(cp = .5),
@@ -335,7 +344,7 @@ gv_class_tree <- train(
 
 ```{r, echo = FALSE}
 gv_class_tree$results
-gv_class_tree$finalModel
+#RMSE of 0.519345	
 ```
 
 
@@ -347,7 +356,7 @@ gv_tree_oob <- train(
   data = gv_train, 
   method = "rf",
   trControl = trainControl(method = "oob"),
-  tuneGrid = data.frame(mtry = c(8,10,12)),
+  tuneGrid = data.frame(mtry = 10),
   ntree = 50, 
   importance = TRUE, 
   nodesize = 5, 
@@ -358,6 +367,51 @@ gv_tree_oob <- train(
 
 ```{r, echo = FALSE}
 gv_tree_oob$results
+plot(gv_tree_oob$finalModel)
+#RMSE of 0.4452655	
+```
+
+```{r, echo = FALSE}
+RMSE <- matrix(c(0.5156813, 0.4736671, 0.4732095, 0.4640177, 0.519345, 0.445265	))
+rownames(RMSE) <- c("Step Backwards","OLS", "Lasso", "Mars", "Tree", "Random Forest")
+colnames(RMSE) <- ("RMSE")
+
+RMSE
+```
+
+```{r}
 vip(gv_tree_oob$finalModel, num_features = 16, bar = FALSE)
 ```
 
+Partial Dependency plots here:
+n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + new_date
+```{r}
+
+partial(
+  gv_tree_oob, 
+  pred.var = "n_injured",
+  grid.resolution = 20
+  ) %>% 
+  autoplot()
+
+partial(
+  gv_tree_oob, 
+  pred.var = "n_guns_involved",
+  grid.resolution = 20
+  ) %>% 
+  autoplot()
+
+partial(
+  gv_tree_oob, 
+  pred.var = "latitude",
+  grid.resolution = 20
+  ) %>% 
+  autoplot()
+
+partial(
+  gv_tree_oob, 
+  pred.var = "new_date",
+  grid.resolution = 20
+  ) %>% 
+  autoplot()
+```
