@@ -36,6 +36,9 @@ library(glmnet) #for LASSO
 library(earth) #for MARS models
 library(vip) #NEW for importance plots
 
+library(usmap)
+library(ggplot2)
+library(tidyverse)
 
 library(rpart)
 library(rpart.plot)
@@ -45,10 +48,10 @@ library(formattable)
 theme_set(theme_minimal())
 ```
 
-```{r}
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
 gvd <- read_csv("GunViolenceData.csv")
 ```
-```{r}
+```{r, echo = FALSE}
 levels(gvd$state)
 ```
 ```{r}
@@ -56,15 +59,8 @@ colnames(gvd)
 ```
 
 
-```{r}
-# gives the data type of each column, helpful for debugging weird errors with types. Many of the types are factors
-# but many functions cant operate on factors.
-map(gvd, class)
-```
 
-
-
-```{r}
+```{r, echo = FALSE}
 #create a new date column on clean data that is of the Date datatype
 datefixed <- gvd
 datefixed['new_date']<-as.Date(as.character(gvd$date), format='%m/%d/%Y')
@@ -72,7 +68,7 @@ class(datefixed$new_date)
 ```
 
 
-
+Should we delete these since we took out the week and day variables?
 ```{r}
 # gun violence grouped by WEEK arranged in chronological order
 # note to reverse order just edit arrange(desc(week))
@@ -93,7 +89,7 @@ totalsByDay <- datefixed %>%
 
 
 
-```{r}
+```{r, echo = FALSE}
 # gun violence grouped by state order descending
 
 dataByState <- datefixed %>%
@@ -102,7 +98,7 @@ dataByState <- datefixed %>%
   arrange(desc(n))
 ```
 
-```{r}
+```{r, echo = FALSE}
 cleandata <- 
   datefixed%>%
   mutate(female_present = str_detect(participant_gender, "Female")) %>% 
@@ -114,7 +110,7 @@ cleandata <-
 
 ```
 
-```{r}
+```{r, echo = FALSE}
 set.seed(253) 
 gv_split <- initial_split(cleandata, 
                              prop = .5)
@@ -126,6 +122,10 @@ gv_test <- testing(gv_split)
 
 ```{r}
 colnames(gv_train)
+
+# gives the data type of each column, helpful for debugging weird errors with types. Many of the types are factors
+# but many functions cant operate on factors.
+map(gv_train, class)
 ```
 
 
@@ -139,13 +139,17 @@ library(tidyverse)
 
 ```
 
-```{r}
+
+
+```{r, echo = FALSE}
 gv_train %>%
   group_by(city_or_county) %>%
   summarize(n=n()) %>%
   arrange(desc(n))
 ```
 
+
+Should we make plots with categorical variables?
 ```{r, fig.width = 14, fig.height = 10}
 plot1 <- gv_train %>%
   ggplot(aes(x=date, y=n_killed)) +
@@ -155,26 +159,20 @@ plot2 <- gv_train %>%
   ggplot(aes(x=date, y=n_injured)) +
   geom_point()
 
-plot3 <- gv_train %>%
-  ggplot(aes(x = congressional_district, y = n_killed)) +
-  geom_point()
 
 plot4 <- gv_train %>%
   ggplot(aes(x = (latitude/longitude), y = n_killed)) +
   geom_point()
 
-grid.arrange(plot1, plot2, plot3, plot4,ncol = 2)
+grid.arrange(plot1, plot2, plot4,ncol = 2)
 ```
 
 
 ```{r}
-library(usmap)
-library(ggplot2)
-
 plot_usmap(data = dataByState, values = "n", color = "black") +
   scale_fill_continuous(low = "white", high = "orchid3", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
 ```
-```{r}
+```{r, echo = FALSE}
 deaths <- gvd %>% 
   filter(n_killed > 0)
 
@@ -190,15 +188,12 @@ nrow(deaths)
 nrow(injured)
 nrow(nobodyHurt)
 ```
-```{r}
+```{r, echo = FALSE}
 dataByState <- deaths %>%
   group_by(state) %>%
   summarize(n=n()) %>%
   arrange(desc(n))
 
-
-library(usmap)
-library(ggplot2)
 
 plot_usmap(data = dataByState, values = "n", color = "black") +
   scale_fill_continuous(low = "white", high = "orchid3", name = "Number Of Deaths (2018)", label = scales::comma) + theme(legend.position = "right")
@@ -207,7 +202,6 @@ dataByState <- injured %>%
   group_by(state) %>%
   summarize(n=n()) %>%
   arrange(desc(n))
-
 
 
 plot_usmap(data = dataByState, values = "n", color = "black") +
@@ -219,11 +213,10 @@ dataByState <- nobodyHurt %>%
   arrange(desc(n))
 
 
-
 plot_usmap(data = dataByState, values = "n", color = "black") +
   scale_fill_continuous(low = "white", high = "orchid3", name = "Nobody Hurt (2018)", label = scales::comma) + theme(legend.position = "right")
 ```
-```{r}
+```{r, echo = FALSE}
 dataByCounty <- datefixed %>%
   group_by(city_or_county) %>%
   summarize(n=n()) %>%
@@ -280,7 +273,7 @@ gv_ols$results
 #This model uses the variables that equate with the smallest RMSE in an OLS model
 set.seed(253) 
 gv_ols2 <- train( 
-  n_killed ~ n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + day,
+  n_killed ~ n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + new_date,
   data = gv_train, 
   method = "lm",
   trControl = splits, 
@@ -295,7 +288,7 @@ lambda_grid <- 10^seq(-4, -1 , length = 50)
 
 set.seed(253)
 gv_lasso <- train(
-  n_killed ~ n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + day,
+  n_killed ~ n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + new_date,
   data = gv_train, 
   method = "glmnet",
   tuneGrid = data.frame(alpha = 1, lambda = lambda_grid),
@@ -308,7 +301,7 @@ gv_lasso <- train(
 gv_lasso$bestTune$lambda
 gv_lasso$results
 
-#RMSE of 0.4696148	
+#RMSE of 0.4732095		
 ```
 
 ```{r, echo = FALSE}
@@ -316,7 +309,7 @@ gv_lasso$results
 set.seed(253)
 
 gv_mars <- train(
-  n_killed ~ n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + day,
+  n_killed ~ n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + new_date,
   data = gv_train, 
   method = "earth",
   trControl = trainControl(method = "cv",
@@ -326,7 +319,7 @@ gv_mars <- train(
 )
 ```
 
-```{r}
+```{r, echo = FALSE}
 set.seed(253)
 
 gv_class_tree <- train(
@@ -340,28 +333,31 @@ gv_class_tree <- train(
 )
 ```
 
-```{r}
+```{r, echo = FALSE}
 gv_class_tree$results
 gv_class_tree$finalModel
 ```
 
 
-```{r}
+
+```{r, echo = FALSE}
 set.seed(253)
 gv_tree_oob <- train(
-  n_killed ~ .,
+  n_killed ~ n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + new_date,
   data = gv_train, 
   method = "rf",
   trControl = trainControl(method = "oob"),
-  tuneGrid = data.frame(mtry = c(2,6,12,18)),
-  ntree = 200, #number of trees used, default is 500
-  importance = TRUE, #for importance plots later
-  nodesize = 5, #this is the default terminal node size for regression trees. Could set larger for smaller trees.
+  tuneGrid = data.frame(mtry = c(8,10,12)),
+  ntree = 50, 
+  importance = TRUE, 
+  nodesize = 5, 
   na.action = na.omit
 )
+
 ```
 
-```{r}
+```{r, echo = FALSE}
+gv_tree_oob$results
 vip(gv_tree_oob$finalModel, num_features = 16, bar = FALSE)
 ```
 
