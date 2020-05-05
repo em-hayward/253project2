@@ -6,7 +6,7 @@ output: html_document
 df_print: paged
 ---
 
-```{r}
+```{r, echo = FALSE}
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 ```
 ```{r,echo=FALSE}
@@ -61,7 +61,7 @@ levels(gvd$state)
 colnames(gvd)
 ```
 
-In our final project for Statistical Machine Learning, we’re using gun violence data from all US states including the District of Columbia ranging from January of 2018 to March of 2018, which include variables such as number of people killed, state, date, and number of participants just to name a few. With gun violence in the US as a relevant and continuous issue, we chose to analyze this dataset because we believe it is important to look deeper into the issue through data in the attempt to better understand it. To clean the data, we . . .  
+In our final project for Statistical Machine Learning, we’re using gun violence data from all US states including the District of Columbia ranging from January of 2018 to March of 2018, which include variables such as number of people killed, state, date, and number of participants just to name a few. With gun violence in the US as a relevant and continuous issue, we chose to analyze this dataset because we believe it is important to look deeper into the issue through data in the attempt to better understand it. To clean the data, we changed the categorical variable 'date' into the numerical variable 'new_date'. We created a new variable 'missing' for all the missing data. From the 'participant_gender' variable, we created the 'female_present' variable. From the 'participant_age' variable we created the 'teen_present' and 'child_present' variables. We also removed multiple variables such as 'address' and 'source_url' that we deemed unusable.    
 
 In our project, we would like to formulate multiple different models that predict the variable n_killed (number of people killed in shooting). Throughout this modeling process, we look at the cross validated root mean squared error (RMSE) of each model and find the lowest to determine the ‘best model’. With this best model we plan to use the testing data to find which variables make the strongest impact on the number of people killed as well as look closer at how these variables affect the n_killed variable. Finding these variables with the largest impact and looking at their effect can be used to better understand gun violence and determine preventative measures for future gun violence. 
 
@@ -162,7 +162,7 @@ gv_train %>%
 
 
 Should we make plots with categorical variables?
-```{r, fig.width = 14, fig.height = 10}
+```{r, fig.width = 14, fig.height = 10, echo = FALSE}
 plot1 <- gv_train %>%
   ggplot(aes(x=date, y=n_killed)) +
   geom_point()
@@ -180,10 +180,7 @@ grid.arrange(plot1, plot2, plot4, ncol = 2)
 ```
 
 
-```{r}
-plot_usmap(data = dataByState, values = "n", color = "black") +
-  scale_fill_continuous(low = "white", high = "orchid3", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
-```
+
 ```{r, echo = FALSE}
 deaths <- gvd %>% 
   filter(n_killed > 0)
@@ -201,6 +198,10 @@ nrow(injured)
 nrow(nobodyHurt)
 ```
 ```{r, echo = FALSE}
+plot_usmap(data = dataByState, values = "n", color = "black") +
+  scale_fill_continuous(low = "white", high = "orchid3", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
+
+
 dataByState <- deaths %>%
   group_by(state) %>%
   summarize(n=n()) %>%
@@ -238,7 +239,7 @@ dataByCounty <- datefixed %>%
 
 ## **Modeling Process**
 
-With these exploratory graphs in mind, we begin to create models. We first fit a backward stepping model, which uses only numerical variables, to determine the most important variables that remain in the final model. These variables include n_injured, latitude, n_guns_involved, and longitude. Next we fit an ordinary least squares (OLS) linear regression model with these variables. However, since we would like to include categorical variables as well, we fit multiple OLS models with the numerical variables we found in our previous model and differing categorical variables until we find the model with the smallest RMSE. The variables that lead to the smallest RMSE in the OLS model are then used in all future modeling. We create lasso, MARS, tree, and random forest models and compute the cross validated RMSE for each. The following code illustrates how we fit each model.
+With these exploratory graphs in mind, we begin to fit models. We first fit a backward stepping model, which uses only numerical variables, to determine the most important variables that remain in the final model. These variables include n_injured, latitude, n_guns_involved, and longitude. Next we fit an ordinary least squares (OLS) linear regression model with these variables. However, since we would like to include categorical variables as well, we fit multiple OLS models with the numerical variables we found in our previous model and differing categorical variables until we find the model with the smallest RMSE. The variables that lead to the smallest RMSE in the OLS model are then used in all future modeling. We create lasso, MARS, tree, and random forest models and compute the cross validated RMSE for each. The following code illustrates how we fit each model and the cross validated RMSE of each.
 
 
 ```{r, results = FALSE}
@@ -257,7 +258,6 @@ gv_cv_vars <- train(
   na.action = na.omit
 )
 
-summary(gv_cv_vars)
 #RMSE of 0.5156813
 ```
 
@@ -358,7 +358,7 @@ gv_tree_oob <- train(
 #RMSE of 0.4499989	
 ```
 
-```{r}
+```{r, echo = FALSE}
 gv_tree_oob %>%
   ggplot(aes(x = mtry, y = RMSE)) +
   geom_point()
