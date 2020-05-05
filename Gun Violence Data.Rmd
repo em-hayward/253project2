@@ -1,11 +1,14 @@
 ---
-title: "Gun Violence Data"
+title: "Statistical Machine Learning Final Project: Gun Violence Data"
 author: "Hayley Hadges, Ethan Deutsch, Em Hayward"
-date: "4/23/2020"
+date: "5/7/2020"
 output: html_document
+df_print: paged
 ---
 
-
+```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
 ```{r,echo=FALSE}
 library(tidyverse)
 library(janitor)
@@ -48,19 +51,28 @@ library(formattable)
 theme_set(theme_minimal())
 ```
 
-```{r, echo = FALSE, message = FALSE, warning = FALSE}
+```{r, echo = FALSE}
 gvd <- read_csv("GunViolenceData.csv")
 ```
-```{r, echo = FALSE}
+```{r, echo = FALSE, results = FALSE}
 levels(gvd$state)
 ```
-```{r}
+```{r, echo = FALSE, results = FALSE}
 colnames(gvd)
 ```
 
+In our final project for Statistical Machine Learning, we’re using gun violence data from all US states including the District of Columbia ranging from January of 2018 to March of 2018, which include variables such as number of people killed, state, date, and number of participants just to name a few. With gun violence in the US as a relevant and continuous issue, we chose to analyze this dataset because we believe it is important to look deeper into the issue through data in the attempt to better understand it. To clean the data, we . . .  
+
+In our project, we would like to formulate multiple different models that predict the variable n_killed (number of people killed in shooting). Throughout this modeling process, we look at the cross validated root mean squared error (RMSE) of each model and find the lowest to determine the ‘best model’. With this best model we plan to use the testing data to find which variables make the strongest impact on the number of people killed as well as look closer at how these variables affect the n_killed variable. Finding these variables with the largest impact and looking at their effect can be used to better understand gun violence and determine preventative measures for future gun violence. 
 
 
-```{r, echo = FALSE}
+## **Exploring Variables**
+
+Before we begin modeling, we first look at some of the variables in the model more closely to determine which could be beneficial to use in the models.
+
+(Include exploratory graphs/illustrations here and describe/analyze)
+
+```{r, echo = FALSE, results = FALSE}
 #create a new date column on clean data that is of the Date datatype
 datefixed <- gvd
 datefixed['new_date']<-as.Date(as.character(gvd$date), format='%m/%d/%Y')
@@ -120,7 +132,7 @@ gv_test <- testing(gv_split)
 
 
 
-```{r}
+```{r, echo = FALSE, results = FALSE}
 colnames(gv_train)
 
 # gives the data type of each column, helpful for debugging weird errors with types. Many of the types are factors
@@ -150,34 +162,22 @@ gv_train %>%
 
 
 Should we make plots with categorical variables?
-```{r}
+```{r, fig.width = 14, fig.height = 10}
 plot1 <- gv_train %>%
-  ggplot(aes(x=new_date, y=n_killed)) +
+  ggplot(aes(x=date, y=n_killed)) +
   geom_point()
-plot1
-```
 
-```{r}
 plot2 <- gv_train %>%
-  ggplot(aes(x=new_date, y=n_injured)) +
+  ggplot(aes(x=date, y=n_injured)) +
   geom_point()
-plot2
-```
 
-```{r}
-plot3 <- gv_train %>%
-  ggplot(aes(x = female_present, y = n_killed)) +
-  geom_boxplot()
-plot3
-```
 
-```{r}
 plot4 <- gv_train %>%
-  ggplot(aes(x = teen_present, y = n_killed)) +
-  geom_boxplot()
-plot4
-```
+  ggplot(aes(x = (latitude/longitude), y = n_killed)) +
+  geom_point()
 
+grid.arrange(plot1, plot2, plot4, ncol = 2)
+```
 
 
 ```{r}
@@ -236,13 +236,14 @@ dataByCounty <- datefixed %>%
 ```
 
 
+## **Modeling Process**
+
+With these exploratory graphs in mind, we begin to create models. We first fit a backward stepping model, which uses only numerical variables, to determine the most important variables that remain in the final model. These variables include n_injured, latitude, n_guns_involved, and longitude. Next we fit an ordinary least squares (OLS) linear regression model with these variables. However, since we would like to include categorical variables as well, we fit multiple OLS models with the numerical variables we found in our previous model and differing categorical variables until we find the model with the smallest RMSE. The variables that lead to the smallest RMSE in the OLS model are then used in all future modeling. We create lasso, MARS, tree, and random forest models and compute the cross validated RMSE for each. The following code illustrates how we fit each model.
 
 
-```{r, echo = FALSE}
-#I used backward selection to find the numeric variables give the smallest cross-validated RMSE in the model.
+```{r, results = FALSE}
 gv_train_num <- gv_train %>% 
   select_if(is.numeric)
-
 
 set.seed(253)
 splits <- trainControl(method = "cv", number = 5)
@@ -255,21 +256,12 @@ gv_cv_vars <- train(
   trControl = splits,
   na.action = na.omit
 )
-```
 
-```{r, echo = FALSE}
-#RMSE of 0.5156813	
 summary(gv_cv_vars)
-gv_cv_vars$results
-
-#Best numeric variables include:
-#n_injured
-#latitude
-#n_guns_involved
-#longitude
+#RMSE of 0.5156813
 ```
 
-```{r, echo = FALSE}
+```{r, results = FALSE}
 #This model uses the four numeric variables from the previous model
 set.seed(253) 
 gv_ols <- train(
@@ -280,11 +272,10 @@ gv_ols <- train(
   na.action = na.omit
 )
 
-gv_ols$results
 #RMSE of 0.5039284	
 ```
 
-```{r, echo = FALSE}
+```{r, results = FALSE}
 #This model uses the variables that equate with the smallest RMSE in an OLS model
 set.seed(253) 
 gv_ols2 <- train( 
@@ -295,11 +286,10 @@ gv_ols2 <- train(
   na.action = na.omit
 )
 
-gv_ols2$results
 #RMSE of 0.4736671	
 ```
 
-```{r}
+```{r, results = FALSE}
 lambda_grid <- 10^seq(-4, -1 , length = 50)
 
 set.seed(253)
@@ -314,14 +304,10 @@ gv_lasso <- train(
   maximize = FALSE
 )
 
-gv_lasso$bestTune$lambda
-gv_lasso$results
-
 #RMSE of 0.4732095		
 ```
 
-```{r, echo = FALSE}
-#Says there are missing values in n_killed
+```{r, results = FALSE}
 set.seed(253)
 
 gv_mars <- train(
@@ -333,14 +319,12 @@ gv_mars <- train(
   tuneGrid = data.frame(degree = 1, nprune = 4:12),
   na.action = na.omit
 )
-```
-```{r}
-gv_mars$bestTune
-gv_mars$results
+
 #RMSE of 0.4640177
 ```
 
-```{r, echo = FALSE}
+
+```{r, results = FALSE}
 set.seed(253)
 
 gv_class_tree <- train(
@@ -352,16 +336,12 @@ gv_class_tree <- train(
   metric = "RMSE",
   na.action = na.omit
 )
-```
 
-```{r, echo = FALSE}
-gv_class_tree$results
 #RMSE of 0.519345	
 ```
 
 
-
-```{r, echo = FALSE}
+```{r, results = FALSE}
 set.seed(253)
 gv_tree_oob <- train(
   n_killed ~ n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + new_date,
@@ -375,13 +355,15 @@ gv_tree_oob <- train(
   na.action = na.omit
 )
 
-```
-
-```{r, echo = FALSE}
-gv_tree_oob$results
-plot(gv_tree_oob$finalModel)
 #RMSE of 0.4452655	
 ```
+
+```{r, echo = FALSE, results = FALSE}
+plot(gv_tree_oob$finalModel)
+```
+
+
+The following table illustrates the cross validated RMSE for each model type. 
 
 ```{r, echo = FALSE}
 RMSE <- matrix(c(0.5156813, 0.4736671, 0.4732095, 0.4640177, 0.519345, 0.445265	))
@@ -391,39 +373,48 @@ colnames(RMSE) <- ("RMSE")
 RMSE
 ```
 
+
+The model we fit with the lowest cross validated RMSE is the random forest model. We will use the test data on this model and look more closely at variable importance and relationship.
+
+
+## **Best Model Analysis**
+
+Use test data here:
 ```{r}
 vip(gv_tree_oob$finalModel, num_features = 16, bar = FALSE)
 ```
 
-Partial Dependency plots here:
-n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + new_date
-```{r}
-
-partial(
+```{r, echo = FALSE}
+p1 <- partial(
   gv_tree_oob, 
   pred.var = "n_injured",
   grid.resolution = 20
   ) %>% 
   autoplot()
 
-partial(
+p2 <- partial(
   gv_tree_oob, 
   pred.var = "n_guns_involved",
   grid.resolution = 20
   ) %>% 
   autoplot()
 
-partial(
+p3 <- partial(
   gv_tree_oob, 
   pred.var = "latitude",
   grid.resolution = 20
   ) %>% 
   autoplot()
 
-partial(
+p4 <- partial(
   gv_tree_oob, 
   pred.var = "new_date",
   grid.resolution = 20
   ) %>% 
   autoplot()
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
 ```
+
+
+## **Results**
