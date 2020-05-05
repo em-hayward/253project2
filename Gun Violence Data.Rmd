@@ -264,7 +264,7 @@ summary(gv_cv_vars)
 ```{r, results = FALSE}
 #This model uses the four numeric variables from the previous model
 set.seed(253) 
-gv_ols <- train(
+gv_ols_basic <- train(
   n_killed ~ n_injured + latitude + n_guns_involved + longitude,
   data = gv_train, 
   method = "lm",
@@ -278,7 +278,7 @@ gv_ols <- train(
 ```{r, results = FALSE}
 #This model uses the variables that equate with the smallest RMSE in an OLS model
 set.seed(253) 
-gv_ols2 <- train( 
+gv_ols_adv <- train( 
   n_killed ~ n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + new_date,
   data = gv_train, 
   method = "lm",
@@ -348,15 +348,25 @@ gv_tree_oob <- train(
   data = gv_train, 
   method = "rf",
   trControl = trainControl(method = "oob"),
-  tuneGrid = data.frame(mtry = 10),
+  tuneGrid = data.frame(mtry = c(5, 10, 15, 20)),
   ntree = 50, 
   importance = TRUE, 
   nodesize = 5, 
   na.action = na.omit
 )
 
-#RMSE of 0.4452655	
+#RMSE of 0.4499989	
 ```
+
+```{r}
+gv_tree_oob %>%
+  ggplot(aes(x = mtry, y = RMSE)) +
+  geom_point()
+
+gv_tree_oob$bestTune
+gv_tree_oob$results
+```
+
 
 ```{r, echo = FALSE, results = FALSE}
 plot(gv_tree_oob$finalModel)
@@ -366,7 +376,7 @@ plot(gv_tree_oob$finalModel)
 The following table illustrates the cross validated RMSE for each model type. 
 
 ```{r, echo = FALSE}
-RMSE <- matrix(c(0.5156813, 0.4736671, 0.4732095, 0.4640177, 0.519345, 0.445265	))
+RMSE <- matrix(c(0.5156813, 0.4736671, 0.4732095, 0.4640177, 0.519345, 0.449998))
 rownames(RMSE) <- c("Step Backwards","OLS", "Lasso", "Mars", "Tree", "Random Forest")
 colnames(RMSE) <- ("RMSE")
 
@@ -418,3 +428,8 @@ grid.arrange(p1, p2, p3, p4, ncol = 2)
 
 
 ## **Results**
+
+```{r}
+#p <- predict(gv_tree_oob, newdata = gv_test)
+```
+
