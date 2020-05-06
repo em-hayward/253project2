@@ -249,7 +249,7 @@ gv_ols_basic <- train(
   na.action = na.omit
 )
 
-#RMSE of 0.5064652		
+#RMSE of 0.5064652
 ```
 
 ```{r, results = FALSE}
@@ -265,6 +265,14 @@ gv_ols_adv <- train(
 
 #RMSE of 0.4765476		
 ```
+
+```{r}
+summary(gv_ols_adv$finalModel) %>% 
+  coefficients() %>% 
+  tidy()
+```
+
+Using the OLS model, we are able to predict the number of people killed in a given shooting if all of the variables are held at their mean. That means that, on average, 8.375 people are killed in ever shooting incident if each variable is held at its mean. Some noteworthy trends include that for every person injured, on average, .2 less people will die in a shooting incident. Since the estimate is 8.375 per incident, this value changes state to state. The state that would have the lowest estimate per incident is in New Hampshire where the number would drop to 7.935 on average if everything was held the same and the highest estimate is in Nevada where the estiamte would be 8.662 deaths.
 
 ```{r, results = FALSE}
 lambda_grid <- 10^seq(-4, -1 , length = 50)
@@ -284,6 +292,13 @@ gv_lasso <- train(
 #RMSE of 0.4762228		
 ```
 
+```{r}
+best_lambda <- gv_lasso$bestTune$lambda
+coefficients(gv_lasso$finalModel, s = best_lambda)
+```
+
+Given our best tuned Lasso model, we determined that longitude, Teen present and eight states do not make a significant impact on our model. We also find that our lasso model's estimate has a much lower average deaths per incident at 5.75 deaths. The effect of number of people injured in a shooting remains similar to the advanced OLS model. We also learn that if a female is present the number of deaths in a given shooting rises, on average, by .28 deaths. Nevada and New Hampshire both have the largest impact on the original estimate, but New Hampshire has a significantly lower impact than it did in the OLS model while Nevada remains close to the same.
+
 ```{r, results = FALSE}
 set.seed(253)
 
@@ -300,6 +315,11 @@ gv_mars <- train(
 #RMSE of 0.4653774	
 ```
 
+```{r}
+gv_mars$finalModel %>% 
+  coefficients() %>% 
+  tidy()
+```
 
 ```{r, results = FALSE}
 set.seed(253)
@@ -308,7 +328,7 @@ gv_class_tree <- train(
   n_killed ~   n_injured + latitude + n_guns_involved + longitude + female_present + teen_present +  state + new_date,
   data = gv_train,
   method = "rpart",
-  tuneGrid = data.frame(cp = .5),
+  tuneGrid = data.frame(cp = .01),
   trControl = trainControl(method = "cv", number = 5),
   metric = "RMSE",
   na.action = na.omit
@@ -317,6 +337,11 @@ gv_class_tree <- train(
 #RMSE of 0.5219339		
 ```
 
+```{r}
+rpart.plot(gv_class_tree$finalModel, cex = .8, fallen.leaves = FALSE)
+```
+
+In our tree plot, we see that the highest bubble is whether less or more than one person is injured in a shooting. 
 
 ```{r, results = FALSE}
 set.seed(253)
