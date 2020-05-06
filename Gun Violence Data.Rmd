@@ -54,12 +54,6 @@ theme_set(theme_minimal())
 ```{r, echo = FALSE}
 gvd <- read_csv("GunViolenceData.csv")
 ```
-```{r, echo = FALSE, results = FALSE}
-levels(gvd$state)
-```
-```{r, echo = FALSE, results = FALSE}
-colnames(gvd)
-```
 
 In our final project for Statistical Machine Learning, we’re using gun violence data from all US states including the District of Columbia ranging from January of 2018 to March of 2018, which include variables such as number of people killed, state, date, and number of participants just to name a few. With gun violence in the US as a relevant and continuous issue, we chose to analyze this dataset because we believe it is important to look deeper into the issue through data in the attempt to better understand it. To clean the data, we changed the categorical variable 'date' into the numerical variable 'new_date'. We created a new variable 'missing' for all the missing data. From the 'participant_gender' variable, we created the 'female_present' variable. From the 'participant_age' variable we created the 'teen_present' and 'child_present' variables. We also removed multiple variables such as 'address' and 'source_url' that we deemed unusable.    
 
@@ -85,30 +79,20 @@ Should we delete these since we took out the week and day variables?
 # gun violence grouped by WEEK arranged in chronological order
 # note to reverse order just edit arrange(desc(week))
 
-totalsByWeek <- datefixed %>%
-  group_by(week) %>%
-  summarize(total=n()) %>%
-  arrange(week)
+#totalsByWeek <- datefixed %>%
+  #group_by(week) %>%
+  #summarize(total=n()) %>%
+  #arrange(week)
 ```
 
 ```{r}
-totalsByDay <- datefixed %>%
-  group_by(day) %>%
-  summarize(total=n()) %>%
-  arrange(day)
+#totalsByDay <- datefixed %>%
+  #group_by(day) %>%
+  #summarize(total=n()) %>%
+  #arrange(day)
 ```
 
 
-
-
-```{r, echo = FALSE}
-# gun violence grouped by state order descending
-
-dataByState <- datefixed %>%
-  group_by(state) %>%
-  summarize(n=n()) %>%
-  arrange(desc(n))
-```
 
 ```{r, echo = FALSE}
 cleandata <- 
@@ -118,9 +102,11 @@ cleandata <-
   mutate(child_present = str_detect(participant_age_group, "Child 0-11")) %>% 
   mutate_if(is.character, replace_na, replace = "missing") %>%
   mutate_if(is.logical, replace_na, replace ="missing") %>% 
-  select(-c(incident_id, incident_url_fields_missing, address, incident_url, source_url, incident_characteristics, location_description, notes, participant_name, participant_relationship, sources))
+  select(-c(incident_id, incident_url_fields_missing, address, incident_url, source_url, incident_characteristics, location_description, notes, participant_name, participant_relationship, sources, congressional_district, state_house_district, state_senate_district))%>%
+  drop_na()
 
 ```
+
 
 ```{r, echo = FALSE}
 set.seed(253) 
@@ -131,26 +117,9 @@ gv_test <- testing(gv_split)
 ```
 
 
-
 ```{r, echo = FALSE, results = FALSE}
 colnames(gv_train)
-
-# gives the data type of each column, helpful for debugging weird errors with types. Many of the types are factors
-# but many functions cant operate on factors.
-map(gv_train, class)
 ```
-
-
-
-
-```{r}
-library(tidyverse)
-#cleandata$participant_gender <- str_replace(cleandata$participant_gender, "||", ",")
-#cleandata$participant_gender <- str_replace(cleandata$participant_gender, "::", "")
-#cleandata$participant_gender <- str_replace(cleandata$participant_gender, "[0123]", "")
-
-```
-
 
 
 ```{r, echo = FALSE}
@@ -161,27 +130,28 @@ gv_train %>%
 ```
 
 
-Should we make plots with categorical variables?
-```{r, fig.width = 14, fig.height = 10, echo = FALSE}
-plot1 <- gv_train %>%
-  ggplot(aes(x=date, y=n_killed)) +
-  geom_point()
 
-plot2 <- gv_train %>%
-  ggplot(aes(x=date, y=n_injured)) +
-  geom_point()
+```{r,  fig.width = 10, fig.height = 7, echo = FALSE}
+plot1 <- gv_train%>%
+  mutate(week = week(new_date))%>%
+  group_by(week)%>%
+  summarise(num_incidences = n())%>%
+  ggplot(aes(x= week, y = num_incidences))+geom_col()
 
 
-plot4 <- gv_train %>%
-  ggplot(aes(x = (latitude/longitude), y = n_killed)) +
-  geom_point()
+plot2 <- gv_train%>%
+  mutate(week = week(new_date))%>%
+  group_by(week)%>%
+  summarise(total_killed = sum(n_killed))%>%
+  ggplot(aes(x= week, y = total_killed))+geom_col()
 
-grid.arrange(plot1, plot2, plot4, ncol = 2)
+
+grid.arrange(plot1, plot2)
 ```
 
 
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, results = FALSE}
 deaths <- gvd %>% 
   filter(n_killed > 0)
 
@@ -197,7 +167,17 @@ nrow(deaths)
 nrow(injured)
 nrow(nobodyHurt)
 ```
+
+
 ```{r, echo = FALSE}
+# gun violence grouped by state order descending
+
+dataByState <- datefixed %>%
+  group_by(state) %>%
+  summarize(n=n()) %>%
+  arrange(desc(n))
+
+
 plot_usmap(data = dataByState, values = "n", color = "black") +
   scale_fill_continuous(low = "white", high = "orchid3", name = "Total Violence (2018)", label = scales::comma) + theme(legend.position = "right")
 
@@ -229,12 +209,7 @@ dataByState <- nobodyHurt %>%
 plot_usmap(data = dataByState, values = "n", color = "black") +
   scale_fill_continuous(low = "white", high = "orchid3", name = "Nobody Hurt (2018)", label = scales::comma) + theme(legend.position = "right")
 ```
-```{r, echo = FALSE}
-dataByCounty <- datefixed %>%
-  group_by(city_or_county) %>%
-  summarize(n=n()) %>%
-  arrange(desc(n))
-```
+
 
 
 ## **Modeling Process**
@@ -249,14 +224,16 @@ gv_train_num <- gv_train %>%
 set.seed(253)
 splits <- trainControl(method = "cv", number = 5)
 
-gv_cv_vars <- train(
-  n_killed ~ .,
-  data = gv_train_num,
-  method = "leapBackward", #NEW method!
-  tuneGrid = data.frame(nvmax = 1:8),
-  trControl = splits,
-  na.action = na.omit
-)
+#gv_cv_vars <- train(
+ # n_killed ~ .,
+  #data = gv_train_num,
+  #method = "leapBackward",
+  #tuneGrid = data.frame(nvmax = 1:8),
+  #trControl = splits,
+  #na.action = na.omit
+#)
+
+#gv_cv_vars$results
 
 #RMSE of 0.5156813
 ```
@@ -272,7 +249,7 @@ gv_ols_basic <- train(
   na.action = na.omit
 )
 
-#RMSE of 0.5039284	
+#RMSE of 0.5064652		
 ```
 
 ```{r, results = FALSE}
@@ -286,7 +263,7 @@ gv_ols_adv <- train(
   na.action = na.omit
 )
 
-#RMSE of 0.4736671	
+#RMSE of 0.4765476		
 ```
 
 ```{r, results = FALSE}
@@ -304,7 +281,7 @@ gv_lasso <- train(
   maximize = FALSE
 )
 
-#RMSE of 0.4732095		
+#RMSE of 0.4762228		
 ```
 
 ```{r, results = FALSE}
@@ -320,7 +297,7 @@ gv_mars <- train(
   na.action = na.omit
 )
 
-#RMSE of 0.4640177
+#RMSE of 0.4653774	
 ```
 
 
@@ -337,7 +314,7 @@ gv_class_tree <- train(
   na.action = na.omit
 )
 
-#RMSE of 0.519345	
+#RMSE of 0.5219339		
 ```
 
 
@@ -355,16 +332,13 @@ gv_tree_oob <- train(
   na.action = na.omit
 )
 
-#RMSE of 0.4499989	
+#RMSE of 0.4571935	
 ```
 
 ```{r, echo = FALSE}
 gv_tree_oob %>%
   ggplot(aes(x = mtry, y = RMSE)) +
   geom_point()
-
-gv_tree_oob$bestTune
-gv_tree_oob$results
 ```
 
 
@@ -376,7 +350,7 @@ plot(gv_tree_oob$finalModel)
 The following table illustrates the cross validated RMSE for each model type. 
 
 ```{r, echo = FALSE}
-RMSE <- matrix(c(0.5156813, 0.4736671, 0.4732095, 0.4640177, 0.519345, 0.449998))
+RMSE <- matrix(c(0.5156813, 0.4765476, 0.4762228, 0.4653774, 0.5219339, 0.4571935))
 rownames(RMSE) <- c("Step Backwards","OLS", "Lasso", "Mars", "Tree", "Random Forest")
 colnames(RMSE) <- ("RMSE")
 
@@ -427,9 +401,16 @@ grid.arrange(p1, p2, p3, p4, ncol = 2)
 ```
 
 
-## **Results**
+To check to see if the model preforms similarly on the testing data, we calculate the cross validated RMSE using the testing data. The RMSE is 0.4926709, which doesn't differ too much from the training RMSE, however it does not look better than the previous models we fit with the training data.
 
-```{r}
-#p <- predict(gv_tree_oob, newdata = gv_test)
+
+```{r, echo = FALSE, results = FALSE}
+gv_test %>% 
+  mutate(pred_n_killed = predict(gv_tree_oob, newdata = gv_test)) %>% 
+  summarize(RMSE = sqrt(mean((n_killed - pred_n_killed)^2)))
 ```
+
+## **Conclusion**
+
+
 
