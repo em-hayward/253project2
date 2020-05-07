@@ -400,9 +400,10 @@ p4 <- partial(
 grid.arrange(p1, p2, p3, p4, ncol = 2)
 ```
 
-
-To check to see if the model preforms similarly on the testing data, we calculate the cross validated RMSE using the testing data. The RMSE is 0.4926709, which doesn't differ too much from the training RMSE, however it does not look better than the previous models we fit with the training data. 
-
+The partial dependence plots are the likely the most important graphs when looking at these four variables. We noticed earlier in the OLS and Lasso models that the number of injuries interestingly decreases as the number of deaths increases. The first graph shows that if few are killed in an incident there is still a high likelyhood of injury, which makes sense because most reported gun incidents involve at least one injury, even if no one was killed. As the graph moves past one injured person, the number of deaths begins to correlate somewhat linearly until about 4 people are injured and then it plateaus as the number of injuries over four result in a similar death count, according ot the data. 
+The second graph correlates the number of guns involved in a shooting incident to the number of deaths. One might infer that a larger number of guns equals a larger number deaths in an incident but this is not necessarily true. Many of the recorded incidents usually involve a single-digit number of guns so it is rare that we find a shooting incident involving 20 or 30 guns. When we do find a data point like this it may skey the data which is why there is an odd jump at 30 guns involved and why it is still significantly below the 1-3 gun range.
+In the third graph we have latitude and number of deaths correlated. Latitude is a correlation along North and South in the United States where 20 degrees is the tips of Texas and Florida while 70 degrees is the northen tip of Alaska. First thing to notice is there is a big gap between 40 degrees and 70 degrees, this is because there is no U.S. territory in between these latitudes. Second, there is a clear correlation between the increase and latitude and the decrease of number of deaths in a shooting incident. It would seem that largely as you north (latitude increasing) the number of deaths in shootings decrease.
+The final graph is the correlation between the date of shooting incidents and the number of deaths that occur. If you remember at the very beginning of this project we created an exploratory plot of the number of deaths by week. This plot goes by month, but there is not a large disparity between the week by week amount of deaths. Interestingly, this plot shows otherwise and this may mean that based off of the amount of deaths per incident by week may be lower from mid-January to mid-March before hiking back up or there are simply more incidents that pump up the numbers both in early January and late April. 
 
 ```{r, echo = FALSE, results = FALSE}
 gv_test %>% 
@@ -410,7 +411,8 @@ gv_test %>%
   summarize(RMSE = sqrt(mean((n_killed - pred_n_killed)^2)))
 ```
 
+To check to see if the model preforms similarly on the testing data, we calculate the cross validated RMSE using the testing data. The RMSE is 0.4926709, which doesn't differ too much from the training RMSE, however it does not look better than the previous models we fit with the training data.
 
 ## **Conclusion**
 
-In conclusion we found that the best model to use to predict the number of shooting deaths in the U.S. is the random forest as it had the lowest RMSE. 
+In conclusion we found that the best model to use to predict the number of shooting deaths in the U.S. is the random forest as it had the lowest RMSE. While the RMSE rose from training to testing data, we found that all the other models did the same and that the random forest model was the only model below a .5 RMSE. From the oob model output we created we noticed a few interesting trends about the data. The first thing we learned is that the number of injuries in a shooting carries the most importance of any variable, by far, in correlating the number of deaths in an incident. This makes sense also both data points are the results of being shot. What is interesting is just how much more important it is in comparison to other data points such as the number of guns involved or the location. In a random forest roughly 35% of trees utilized this variable, the next closest figure is if a female was present at the shooting at about 12%. 
