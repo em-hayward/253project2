@@ -149,7 +149,7 @@ plot2 <- gv_train%>%
 grid.arrange(plot1, plot2)
 ```
 
-
+The first exploratory graph here is the number of shooting incidents that happen per week. The second plot, is the number of people killed per week in recorded shooting incidents. In the first graph it seems there is a slightly higher number of incidents that occur in the first five weeks of the year compared to the next eight weeks. There is a similar trend with the number of people killed, as four of the first five weeks have the highest death toll of the enntire 13-week data set. 
 
 ```{r, echo = FALSE, results = FALSE}
 deaths <- gvd %>% 
@@ -210,7 +210,7 @@ plot_usmap(data = dataByState, values = "n", color = "black") +
   scale_fill_continuous(low = "white", high = "orchid3", name = "Nobody Hurt (2018)", label = scales::comma) + theme(legend.position = "right")
 ```
 
-
+In these four US maps we can start by looking at the total violence, number of deaths by state. The darker states in the first three graphs indicate that there are more deaths and injuries in those states and lighter or white colours means there is less violence overall in those states. The four darkest states on average in the first three graphs are Texas, California, Illinois and Florida. The lighter regions of the United States are in the Mid-Eastern U.S., the upper Northeast and Alaska and Hawai'i. The fourth graph shows the number of people that were not hurt but still in a shooting incident. There is a larger switch of the darkness of colours in this graph which includes a significant darkening of Michigan, Wisconsin and Minnesota and the lightening of many Southern States.
 
 ## **Modeling Process**
 
@@ -341,7 +341,7 @@ gv_class_tree <- train(
 rpart.plot(gv_class_tree$finalModel, cex = .8, fallen.leaves = FALSE)
 ```
 
-In our tree plot, we see that the highest bubble is whether less or more than one person is injured in a shooting. 
+
 
 ```{r, results = FALSE}
 set.seed(253)
@@ -426,7 +426,7 @@ grid.arrange(p1, p2, p3, p4, ncol = 2)
 ```
 
 
-To check to see if the model preforms similarly on the testing data, we calculate the cross validated RMSE using the testing data. The RMSE is 0.4926709, which doesn't differ too much from the training RMSE, however it does not look better than the previous models we fit with the training data.
+To check to see if the model preforms similarly on the testing data, we calculate the cross validated RMSE using the testing data. The RMSE is 0.4926709, which doesn't differ too much from the training RMSE, however it does not look better than the previous models we fit with the training data. 
 
 
 ```{r, echo = FALSE, results = FALSE}
@@ -435,7 +435,7 @@ gv_test %>%
   summarize(RMSE = sqrt(mean((n_killed - pred_n_killed)^2)))
 ```
 
+
 ## **Conclusion**
 
-
-
+In conclusion we found that the best model to use to predict the number of shooting deaths in the U.S. is the random forest as it had the lowest RMSE. 
