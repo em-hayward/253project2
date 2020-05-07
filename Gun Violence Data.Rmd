@@ -342,11 +342,6 @@ gv_tree_oob %>%
 ```
 
 
-```{r, echo = FALSE, results = FALSE}
-plot(gv_tree_oob$finalModel)
-```
-
-
 The following table illustrates the cross validated RMSE for each model type. 
 
 ```{r, echo = FALSE}
@@ -416,3 +411,5 @@ To check to see if the model preforms similarly on the testing data, we calculat
 ## **Conclusion**
 
 In conclusion we found that the best model to use to predict the number of shooting deaths in the U.S. is the random forest as it had the lowest RMSE. While the RMSE rose from training to testing data, we found that all the other models did the same and that the random forest model was the only model below a .5 RMSE. From the oob model output we created we noticed a few interesting trends about the data. The first thing we learned is that the number of injuries in a shooting carries the most importance of any variable, by far, in correlating the number of deaths in an incident. This makes sense also both data points are the results of being shot. What is interesting is just how much more important it is in comparison to other data points such as the number of guns involved or the location. In a random forest roughly 35% of trees utilized this variable, the next closest figure is if a female was present at the shooting at about 12%. 
+
+The variables n_guns_involved, states, and the type of participants during gun violence incidents were the most important predictors for n_killed, although our analysis does not convey HOW they are important. As an exploratory analysis of a small proportion of the dataset, future analyses could utilize the full dataset and preform more in depth examination of these variables and how they can be used to further predict, prevent, and understand gun violence in the US.
